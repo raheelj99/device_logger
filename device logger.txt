@@ -1,0 +1,11 @@
+Plan a logging service in golang for me with the following features. The goal is to have a state of the art solution that can be integrated into my C++ application. I am supposed to be an elite distributed robotics engineer, so it should also align with IOT and security concepts. I am totally new to golang and this is my first as well as production grade module. Prepare a documentation that will explain all the golang concepts and syntax involved. Then prep a manual for the service to use it fully in the application. All the good engineering practices and patterns should be followed. Also the codebase should be concise, reliable and maintainable. Add only important comments and also prep a document as to how this solution is elite and which patterns are followed. 
+
+1. Ingestion interfaces: MQTT
+2. Observation interfaces: gRPC
+3. Log entry: structured with structure extendable and backward compatible
+4. Storage technologies: Redis for short term but persistence and any state of the art bucket (compressed and indexable) for long term
+5. Observability tools: Grafana and its bundle
+6. Auditability: Signature per entry 
+7. Authentication: Offline as well as online licensing of the session
+8. Security: TLS for both MQTT and gRPC
+ 

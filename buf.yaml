@@ -1,0 +1,14 @@
+version: v2
+modules:
+  - path: api/proto
+lint:
+  use:
+    - STANDARD
+  except:
+    # Streaming LogEntry directly (rather than a per-entry envelope) is a
+    # deliberate choice for a log API; entries are self-contained records.
+    - RPC_REQUEST_RESPONSE_UNIQUE
+    - RPC_RESPONSE_STANDARD_NAME
+breaking:
+  use:
+    - WIRE_JSON

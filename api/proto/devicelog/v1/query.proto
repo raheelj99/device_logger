@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+package devicelog.v1;
+
+import "devicelog/v1/log.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "devlog/api/gen/devicelog/v1;devicelogv1";
+
+// LogService is the observation plane: historical queries, live tailing,
+// audit verification, and compliance report export. All RPCs require TLS and
+// a valid license presented as `authorization: Bearer <token>` metadata.
+service LogService {
+  rpc Query(QueryRequest) returns (stream LogEntry);
+  rpc Tail(TailRequest) returns (stream LogEntry);
+  rpc VerifyRange(VerifyRangeRequest) returns (VerifyRangeResponse);
+  rpc ExportAuditReport(ExportAuditReportRequest) returns (AuditReport);
+  rpc GetStats(GetStatsRequest) returns (GetStatsResponse);
+}
+
+message QueryRequest {
+  repeated string device_ids = 1;               // empty = all devices
+  google.protobuf.Timestamp from = 2;           // zero = server default lookback
+  google.protobuf.Timestamp to = 3;             // zero = now
+  Severity min_severity = 4;
+  string subsystem = 5;
+  string trace_id = 6;
+  uint32 limit = 7;                             // 0 = server default; capped by server max
+}
+
+message TailRequest {
+  repeated string device_ids = 1;
+  Severity min_severity = 2;
+  string trace_id = 3;
+}
+
+message VerifyRangeRequest {
+  string device_id = 1;
+  google.protobuf.Timestamp from = 2;
+  google.protobuf.Timestamp to = 3;
+}
+
+message ChainBreak {
+  string entry_id = 1;
+  string reason = 2;
+}
+
+message VerifyRangeResponse {
+  uint64 entries_checked = 1;
+  bool ok = 2;
+  repeated ChainBreak breaks = 3;
+}
+
+message ExportAuditReportRequest {
+  string trace_id = 1;                          // the sanitization job id
+  google.protobuf.Timestamp from = 2;
+  google.protobuf.Timestamp to = 3;
+}
+
+// AuditReport is the raw material for a Certificate of Sanitization: every
+// entry of a job plus a verification verdict, hashed and signed by the
+// service so the exported bundle is itself tamper-evident.
+message AuditReport {
+  string trace_id = 1;
+  repeated LogEntry entries = 2;
+  uint64 signatures_verified = 3;
+  bool all_signatures_valid = 4;
+  google.protobuf.Timestamp generated_at = 5;
+  bytes report_hash = 6;                        // SHA-256 over the ordered entry hashes
+  bytes report_signature = 7;                   // Ed25519 over report_hash
+  string key_id = 8;
+}
+
+message GetStatsRequest {}
+
+message DeviceStats {
+  string device_id = 1;
+  uint64 hot_entries = 2;
+  google.protobuf.Timestamp last_ingest = 3;
+}
+
+message GetStatsResponse {
+  repeated DeviceStats devices = 1;
+}

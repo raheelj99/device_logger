@@ -1,0 +1,51 @@
+# devlogd config for the containerized profile (docker compose --profile service).
+# Same schema as config/devlogd.example.yaml; hostnames are compose services.
+
+mqtt:
+  listen: ":8883"
+  tls:
+    cert_file: /etc/devlog/certs/server.crt
+    key_file: /etc/devlog/certs/server.key
+
+grpc:
+  listen: ":9443"
+  tls:
+    cert_file: /etc/devlog/certs/server.crt
+    key_file: /etc/devlog/certs/server.key
+
+http:
+  listen: ":9090"
+
+redis:
+  addr: "redis:6379"
+  hot_retention: 24h
+
+s3:
+  endpoint: "minio:9000"
+  access_key: minioadmin
+  secret_key: minioadmin
+  bucket: devlog
+  use_tls: false
+
+signing:
+  key_file: /etc/devlog/keys/signing.key
+  key_id: devlogd-2026
+
+license:
+  issuer_pub_file: /etc/devlog/keys/issuer.pub
+  mode: offline
+  server_url: "https://licensed:9444"
+  server_ca_file: /etc/devlog/certs/ca.crt
+  grace: 72h
+
+archive:
+  flush_interval: 60s
+  max_batch_bytes: 8388608
+  max_batch_entries: 5000
+
+query:
+  max_results: 10000
+  default_lookback: 168h
+
+log:
+  level: info

@@ -1,0 +1,216 @@
+{
+  "traceId":  "job-01KXMQ7PPQAT86PPFYG27SXG83",
+  "entries":  [
+    {
+      "entryId":  "01KXMQ7PQABMYW1D878ZF3XJYT",
+      "deviceId":  "station-01",
+      "deviceTime":  "2026-07-16T05:43:48.201685500Z",
+      "ingestTime":  "2026-07-16T05:43:48.202213200Z",
+      "severity":  "SEVERITY_INFO",
+      "subsystem":  "system",
+      "message":  "station self-check passed",
+      "attributes":  {
+        "firmware":  "2.4.1"
+      },
+      "seq":  "1",
+      "traceId":  "job-01KXMQ7PPQAT86PPFYG27SXG83",
+      "audit":  {
+        "entryHash":  "p5phsQu/PPHXNK05TH34EfwzB8lB4iGqcRBdxFpbWl4=",
+        "signature":  "wr5u8CbI/M2mJp5dQzR+51fEwfS+0nXH0Nzi/Lb8PG/J+oCIKsT7A3xhFRWW5RkR9WxnyCjgnB0aeEGRxlIxDg==",
+        "keyId":  "devlogd-2026"
+      }
+    },
+    {
+      "entryId":  "01KXMQ7PW284P9DQR6AWMWKK6Z",
+      "deviceId":  "station-01",
+      "deviceTime":  "2026-07-16T05:43:48.354274600Z",
+      "ingestTime":  "2026-07-16T05:43:48.354274600Z",
+      "severity":  "SEVERITY_INFO",
+      "subsystem":  "sanitizer",
+      "message":  "sanitization started",
+      "attributes":  {
+        "firmware":  "2.4.1"
+      },
+      "seq":  "2",
+      "traceId":  "job-01KXMQ7PPQAT86PPFYG27SXG83",
+      "sanitization":  {
+        "media":  {
+          "serial":  "WD-9F2K3L0042",
+          "model":  "WDC WD40EFRX",
+          "capacityBytes":  "4398046511104",
+          "mediaType":  "HDD"
+        },
+        "standard":  "SANITIZATION_STANDARD_NIST_800_88_PURGE",
+        "technique":  "overwrite-1pass",
+        "phase":  "SANITIZATION_PHASE_STARTED",
+        "operatorId":  "op-raheel"
+      },
+      "audit":  {
+        "entryHash":  "H826PQQJY6JFjYhxUPi0JLuo1j2pbAFH837cTul2QvA=",
+        "prevHash":  "p5phsQu/PPHXNK05TH34EfwzB8lB4iGqcRBdxFpbWl4=",
+        "signature":  "jW9Np8fNkFZ+o+lWTYip0afV428gB6klOjF+AaXgSe913b8wZFCr04C2sh1WH0xRocaB6dCMfZZRM1p2jmG0Ag==",
+        "keyId":  "devlogd-2026"
+      }
+    },
+    {
+      "entryId":  "01KXMQ7Q1EM3E3W2DNGJ2Z8TEG",
+      "deviceId":  "station-01",
+      "deviceTime":  "2026-07-16T05:43:48.526116400Z",
+      "ingestTime":  "2026-07-16T05:43:48.526116400Z",
+      "severity":  "SEVERITY_INFO",
+      "subsystem":  "sanitizer",
+      "message":  "overwrite pass in progress",
+      "attributes":  {
+        "firmware":  "2.4.1"
+      },
+      "seq":  "3",
+      "traceId":  "job-01KXMQ7PPQAT86PPFYG27SXG83",
+      "sanitization":  {
+        "media":  {
+          "serial":  "WD-9F2K3L0042",
+          "model":  "WDC WD40EFRX",
+          "capacityBytes":  "4398046511104",
+          "mediaType":  "HDD"
+        },
+        "standard":  "SANITIZATION_STANDARD_NIST_800_88_PURGE",
+        "technique":  "overwrite-1pass",
+        "phase":  "SANITIZATION_PHASE_PROGRESS",
+        "progressPct":  25,
+        "operatorId":  "op-raheel"
+      },
+      "audit":  {
+        "entryHash":  "zXu8230PBfs6ZLT2L6S93Jwug+hpCXvmrRZeIz7Q1Ak=",
+        "prevHash":  "H826PQQJY6JFjYhxUPi0JLuo1j2pbAFH837cTul2QvA=",
+        "signature":  "aMd1Zh2sy0ZFpMptr5OqC0FEwTYzaJmsYHqHI/h+5pPv0XzE8R+cV12ibL4qKzfExT0j+TD2T/GotlDhO1Q7Cw==",
+        "keyId":  "devlogd-2026"
+      }
+    },
+    {
+      "entryId":  "01KXMQ7Q67H0DBNSA5K4N8WDBY",
+      "deviceId":  "station-01",
+      "deviceTime":  "2026-07-16T05:43:48.679423600Z",
+      "ingestTime":  "2026-07-16T05:43:48.679423600Z",
+      "severity":  "SEVERITY_WARN",
+      "subsystem":  "smart",
+      "message":  "reallocated sector count above baseline",
+      "attributes":  {
+        "firmware":  "2.4.1"
+      },
+      "seq":  "4",
+      "traceId":  "job-01KXMQ7PPQAT86PPFYG27SXG83",
+      "audit":  {
+        "entryHash":  "x2Hysbhaupn12sDiOa927c+/JI/YV3hnbtP7j+9IsQI=",
+        "prevHash":  "zXu8230PBfs6ZLT2L6S93Jwug+hpCXvmrRZeIz7Q1Ak=",
+        "signature":  "kOwUzrs+rpCpl3GTz/vxvlsrVIGe7T391KMFaZ41tCec1PCG8ex99rD40mu4VPIXUHpR1e4vpXWrLw/0p2vEAg==",
+        "keyId":  "devlogd-2026"
+      }
+    },
+    {
+      "entryId":  "01KXMQ7QAZ8J3ZTDKPQ1K44AMR",
+      "deviceId":  "station-01",
+      "deviceTime":  "2026-07-16T05:43:48.831343100Z",
+      "ingestTime":  "2026-07-16T05:43:48.831846Z",
+      "severity":  "SEVERITY_INFO",
+      "subsystem":  "sanitizer",
+      "message":  "overwrite pass in progress",
+      "attributes":  {
+        "firmware":  "2.4.1"
+      },
+      "seq":  "5",
+      "traceId":  "job-01KXMQ7PPQAT86PPFYG27SXG83",
+      "sanitization":  {
+        "media":  {
+          "serial":  "WD-9F2K3L0042",
+          "model":  "WDC WD40EFRX",
+          "capacityBytes":  "4398046511104",
+          "mediaType":  "HDD"
+        },
+        "standard":  "SANITIZATION_STANDARD_NIST_800_88_PURGE",
+        "technique":  "overwrite-1pass",
+        "phase":  "SANITIZATION_PHASE_PROGRESS",
+        "progressPct":  75,
+        "operatorId":  "op-raheel"
+      },
+      "audit":  {
+        "entryHash":  "SCc0wmtZXlwq8ZUrC8ZL0Z/lMmWgxSwVZx26M2QCbfE=",
+        "prevHash":  "x2Hysbhaupn12sDiOa927c+/JI/YV3hnbtP7j+9IsQI=",
+        "signature":  "jgdnkMh6qsi8RdripvnWqSSM2BKO3zTktd+pPMOcmqmZAOE1vqhSKzBHJtucSexafrzJvesG/FsN6+4RBxbJDg==",
+        "keyId":  "devlogd-2026"
+      }
+    },
+    {
+      "entryId":  "01KXMQ7QFQFE7Q9KQ56N6AMX0M",
+      "deviceId":  "station-01",
+      "deviceTime":  "2026-07-16T05:43:48.983895700Z",
+      "ingestTime":  "2026-07-16T05:43:48.983895700Z",
+      "severity":  "SEVERITY_INFO",
+      "subsystem":  "sanitizer",
+      "message":  "verifying sampled sectors",
+      "attributes":  {
+        "firmware":  "2.4.1"
+      },
+      "seq":  "6",
+      "traceId":  "job-01KXMQ7PPQAT86PPFYG27SXG83",
+      "sanitization":  {
+        "media":  {
+          "serial":  "WD-9F2K3L0042",
+          "model":  "WDC WD40EFRX",
+          "capacityBytes":  "4398046511104",
+          "mediaType":  "HDD"
+        },
+        "standard":  "SANITIZATION_STANDARD_NIST_800_88_PURGE",
+        "technique":  "overwrite-1pass",
+        "phase":  "SANITIZATION_PHASE_VERIFYING",
+        "progressPct":  100,
+        "operatorId":  "op-raheel"
+      },
+      "audit":  {
+        "entryHash":  "iQOrkqwNFQsmYkE0ywIV7hgL0VeRjnJuFVITi7/jiyw=",
+        "prevHash":  "SCc0wmtZXlwq8ZUrC8ZL0Z/lMmWgxSwVZx26M2QCbfE=",
+        "signature":  "FvRebkxsQQzL5lwr9xsS+sFcobbJynALFl4h6wo2N5qIaQYfnTMGG6vK5sZxXbZl3nEIVgU7pb0cFjflmVzBBA==",
+        "keyId":  "devlogd-2026"
+      }
+    },
+    {
+      "entryId":  "01KXMQ7QMFN9559X5F46KKNAW0",
+      "deviceId":  "station-01",
+      "deviceTime":  "2026-07-16T05:43:49.135407Z",
+      "ingestTime":  "2026-07-16T05:43:49.135731900Z",
+      "severity":  "SEVERITY_INFO",
+      "subsystem":  "sanitizer",
+      "message":  "sanitization completed, verification passed",
+      "seq":  "7",
+      "traceId":  "job-01KXMQ7PPQAT86PPFYG27SXG83",
+      "sanitization":  {
+        "media":  {
+          "serial":  "WD-9F2K3L0042",
+          "model":  "WDC WD40EFRX",
+          "capacityBytes":  "4398046511104",
+          "mediaType":  "HDD"
+        },
+        "standard":  "SANITIZATION_STANDARD_NIST_800_88_PURGE",
+        "technique":  "overwrite-1pass",
+        "phase":  "SANITIZATION_PHASE_COMPLETED",
+        "progressPct":  100,
+        "verification":  {
+          "method":  "sampled-read",
+          "samplePct":  10,
+          "passed":  true
+        },
+        "operatorId":  "op-raheel"
+      },
+      "audit":  {
+        "entryHash":  "6DVwU1oP2cWB7TcmmxfaN12vzd6/v080ABCIsXf3ZWw=",
+        "prevHash":  "iQOrkqwNFQsmYkE0ywIV7hgL0VeRjnJuFVITi7/jiyw=",
+        "signature":  "6rNDyRgfm43H5aHXc0kvcZGTrn55xeyHKpsx7b3N/P3HRv0CfCWExrDEDNgKFU8cLoJCeflmuleeACI8HQRjBg==",
+        "keyId":  "devlogd-2026"
+      }
+    }
+  ],
+  "signaturesVerified":  "7",
+  "allSignaturesValid":  true,
+  "generatedAt":  "2026-07-16T05:44:52.914639Z",
+  "reportHash":  "wlWgFIQqIKgAFSGSe6Awz8trI09cWYwzpiRkwkG4I7U=",
+  "reportSignature":  "c5/VAEe85ShaR2QZVjs0rzw634gA49VQ/E2Z8wIZvfGRcHFdGCdasiL7g0TBVklGLXM5HsPCb08mVYNUorW4BQ==",
+  "keyId":  "devlogd-2026"
+}

@@ -1,0 +1,10 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: devlogd
+    static_configs:
+      # devlogd running natively on the host (the default dev setup):
+      - targets: ["host.docker.internal:9090"]
+      # devlogd running in compose (docker compose --profile service up):
+      - targets: ["devlogd:9090"]

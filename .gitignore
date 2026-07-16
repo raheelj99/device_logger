@@ -1,0 +1,14 @@
+# Secrets and locally generated material — never commit
+deploy/certs/
+deploy/keys/
+*.lic
+
+# Build artifacts
+/bin/
+/dist/
+*.exe
+
+# Editor/OS noise
+.vscode/
+.idea/
+Thumbs.db

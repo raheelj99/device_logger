@@ -1,0 +1,55 @@
+# devlogd configuration — copy to config/devlogd.yaml and adjust.
+# Every value here can be overridden by DEVLOG_* environment variables,
+# e.g. DEVLOG_REDIS_ADDR, DEVLOG_S3_SECRET_KEY (see docs/MANUAL.md).
+
+mqtt:
+  listen: ":8883"
+  tls:
+    cert_file: deploy/certs/server.crt
+    key_file: deploy/certs/server.key
+    # client_ca_file: deploy/certs/ca.crt   # uncomment to require client certificates (mutual TLS)
+
+grpc:
+  listen: ":9443"
+  tls:
+    cert_file: deploy/certs/server.crt
+    key_file: deploy/certs/server.key
+    # client_ca_file: deploy/certs/ca.crt
+
+http:
+  listen: ":9090" # Prometheus /metrics, /healthz, /readyz
+
+redis:
+  addr: "localhost:6379"
+  password: ""
+  hot_retention: 24h # entries older than this are trimmed from Redis (cold storage keeps them)
+
+s3:
+  endpoint: "localhost:9000"
+  access_key: minioadmin
+  secret_key: minioadmin
+  bucket: devlog
+  use_tls: false
+
+signing:
+  key_file: deploy/keys/signing.key
+  key_id: devlogd-2026 # recorded in every entry's audit block; change when rotating keys
+
+license:
+  issuer_pub_file: deploy/keys/issuer.pub
+  mode: offline # offline | online
+  server_url: "https://localhost:9444"
+  server_ca_file: deploy/certs/ca.crt
+  grace: 72h # how long sessions survive an unreachable license server (online mode)
+
+archive:
+  flush_interval: 60s
+  max_batch_bytes: 8388608 # 8 MiB
+  max_batch_entries: 5000
+
+query:
+  max_results: 10000
+  default_lookback: 168h # 7 days, when a query has no explicit `from`
+
+log:
+  level: info # debug | info | warn | error
