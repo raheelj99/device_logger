@@ -7,10 +7,13 @@ import "google/protobuf/timestamp.proto";
 option go_package = "devlog/api/gen/devicelog/v1;devicelogv1";
 
 // LogEntry is the wire and storage format for every log record.
-// Evolution rules (backward compatibility): only ADD fields with new numbers,
-// never renumber or change the type of an existing field, and reserve the
-// numbers of removed fields. Unknown fields are preserved end-to-end.
-message LogEntry {
+// Evolution rules (backward compatibility): 
+//   1. Only ADD fields with new numbers,
+//   2. Never renumber or change the type of an existing field, 
+//   3. Reserve the numbers of removed fields
+//   4. Unknown fields are preserved end-to-end.
+message LogEntry 
+{
   string entry_id = 1;                          // ULID, assigned by the server at ingest
   string device_id = 2;                         // producing station / robot; must match the authenticated MQTT identity
   google.protobuf.Timestamp device_time = 3;    // producer clock
@@ -29,18 +32,21 @@ message LogEntry {
   Audit audit = 15;                             // filled by the server; producers must leave empty
 }
 
-// Audit carries the per-entry tamper-evidence: a SHA-256 of the canonical
-// entry, a link to the previous entry's hash (per-device hash chain), and an
-// Ed25519 signature over entry_hash. key_id names the signing key so keys can
-// be rotated without invalidating history.
-message Audit {
+// Audit carries the per-entry tamper-evidence: 
+// - A SHA-256 of the canonical entry
+// - A link to the previous entry's hash (per-device hash chain)
+// - An Ed25519 signature over entry_hash 
+// - key_id names the signing key so keys can be rotated without invalidating history
+message Audit 
+{
   bytes entry_hash = 1;
   bytes prev_hash = 2;
   bytes signature = 3;
   string key_id = 4;
 }
 
-enum Severity {
+enum Severity 
+{
   SEVERITY_UNSPECIFIED = 0;
   SEVERITY_TRACE = 1;
   SEVERITY_DEBUG = 2;
@@ -52,7 +58,8 @@ enum Severity {
 
 // SanitizationEvent models one step of a media-sanitization job following
 // NIST SP 800-88 Rev.1 and IEEE 2883-2022 terminology.
-message SanitizationEvent {
+message SanitizationEvent 
+{
   TargetMedia media = 1;
   SanitizationStandard standard = 2;
   string technique = 3;        // e.g. "overwrite-1pass", "crypto-erase", "block-erase"
@@ -63,20 +70,23 @@ message SanitizationEvent {
   string error = 8;            // set for FAILED / ABORTED
 }
 
-message TargetMedia {
+message TargetMedia 
+{
   string serial = 1;
   string model = 2;
   uint64 capacity_bytes = 3;
   string media_type = 4;       // e.g. "HDD", "SSD-SATA", "SSD-NVMe", "USB-Flash"
 }
 
-message Verification {
+message Verification 
+{
   string method = 1;           // e.g. "full-read", "sampled-read"
   double sample_pct = 2;
   bool passed = 3;
 }
 
-enum SanitizationStandard {
+enum SanitizationStandard 
+{
   SANITIZATION_STANDARD_UNSPECIFIED = 0;
   SANITIZATION_STANDARD_NIST_800_88_CLEAR = 1;
   SANITIZATION_STANDARD_NIST_800_88_PURGE = 2;
@@ -86,7 +96,8 @@ enum SanitizationStandard {
   SANITIZATION_STANDARD_IEEE_2883_DESTRUCT = 6;
 }
 
-enum SanitizationPhase {
+enum SanitizationPhase 
+{
   SANITIZATION_PHASE_UNSPECIFIED = 0;
   SANITIZATION_PHASE_STARTED = 1;
   SANITIZATION_PHASE_PROGRESS = 2;

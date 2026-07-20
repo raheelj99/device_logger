@@ -47,7 +47,8 @@ Every doc follows the same shape so you always know where to look:
 
 ## Companion docs
 
-- [`../GO_CONCEPTS.md`](../GO_CONCEPTS.md) — a compact language tour if you want
-  the concepts stripped of any one component's context.
+- [`../GO_CONCEPTS.md`](../GO_CONCEPTS.md) — a one-line-per-concept index, if
+  you just need a fast reminder of what something means before jumping back
+  into a doc below.
 - [`../COMPONENTS.md`](../COMPONENTS.md) — the architectural reference.
 - [`../TESTING.md`](../TESTING.md) — how each component is verified.

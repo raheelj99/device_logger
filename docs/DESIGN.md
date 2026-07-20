@@ -1,5 +1,23 @@
 # Design — Architecture, Patterns, and Why This Is Production-Grade
 
+## Guiding principles
+
+Five rules the patterns below exist to serve. The thesis is narrow and
+testable: **every decision is deliberate, every claim is verifiable, and every
+failure mode is named before it happens.** Cleverness is not the goal —
+control is.
+
+| Principle | What it means in practice | Where you can see it |
+| --- | --- | --- |
+| **Contracts before code** | One schema (`api/proto`) generates the Go service *and* every client — C++, Node, Nest, Python. Drift is impossible, not merely discouraged. | `clients/proto` is the same `.proto` the server compiles from; client unit tests assert a byte round-trip through it. |
+| **Fail fast, fail loud** | Bad config, unreachable dependencies, or a broken chain abort at the earliest possible point with a precise message — never a silent wrong answer. | `config.validate()`, devlogd's startup pings, the C++ supervisor detecting an early child exit (§7), checksum/chain verification. |
+| **Trust is earned per entry** | Security is not a perimeter; it is a property carried by each record: signed, hash-chained, license-gated, TLS-only. | `internal/sign`, per-session license auth, mutual-TLS option. |
+| **Every claim is verifiable** | Nothing is asserted that a test or a runtime probe cannot confirm — including "it works from another language." | Go `-race` tests, client codec round-trip tests, the cross-language e2e harness, `/readyz`. See [`TESTING.md`](TESTING.md). |
+| **Name the failure first** | Each component's failure mode and blast radius is documented and bounded *before* it is relied upon. | §5 below; the C++ supervisor's fail-fast policy (§7); drop-on-slow tail. |
+
+Everything below — the pattern inventory, the security model, and the
+deployment and client integrations — is an application of one of these five.
+
 ## 1. System overview
 
 ```mermaid
@@ -138,3 +156,64 @@ or 14 without breaking a single stored entry or deployed producer.
   acceptable because activation is idempotent and re-activation is automatic
   via heartbeat; a persistent store would add state for negligible gain at
   this scale.
+
+## 7. Deployment integration — the C++ application owns devlogd's lifecycle
+
+**What.** `deploy/embed/` ships a dependency-free `DevlogdSupervisor` (POSIX +
+libstdc++ only) that the sanitization app uses to spawn devlogd during its own
+init, block until devlogd is actually ready, and drain it gracefully on
+shutdown. Full mechanics and `.deb` packaging:
+[`deploy/embed/README.md`](../deploy/embed/README.md).
+
+**Why this shape.**
+
+- *Lifecycle coupling was the requirement*: the audit logger must live and die
+  with the sanitization app, on hosts that may not run systemd (field robots,
+  minimal containers) — so the app owns the process, not systemd.
+- *Readiness, not liveness*: `start()` gates on `GET /readyz == 200`, not "the
+  process exists." A logger that's up but can't reach Redis is useless — fail
+  fast applies to a dependency you can't sanitize media without.
+- *Graceful drain*: `stop()` sends `SIGTERM` (devlogd flushes the archiver),
+  waits a bounded grace window, then escalates to `SIGKILL` — bounded, never
+  hanging.
+- *Zero third-party deps*: the readiness probe is a raw-socket HTTP GET rather
+  than linking libcurl — fewer dependencies on the appliance, smaller attack
+  surface, simpler packaging.
+
+**How it's proven.** Compiles under `-std=c++17`; runtime-tested against a
+fake devlogd (spawn → readiness-gate → graceful `SIGTERM` stop). The `.deb`
+guidance encodes the security boundary as file permissions (signing key
+`0600`, dedicated `devlog` user, `issuer.key` never shipped).
+
+## 8. Multi-language clients — one contract, five reference implementations
+
+**What.** `clients/` ships reference clients in Node, NestJS, and Python
+(Django/Flask/FastAPI over a shared `devlog_client` package). Each exercises
+*both* planes: publish a full sanitization job over MQTT/TLS, then read it
+back over gRPC/TLS (query, verify the chain, export the signed audit report).
+Per-stack usage: [`clients/README.md`](../clients/README.md).
+
+**Why both planes.** A client that only queries proves nothing about
+ingestion, and vice versa. The `e2e` command in every client is the real
+contract: write from a non-Go client, read it back, and confirm the
+signatures the Go service produced still verify — the only test that proves
+the module is genuinely polyglot-ready.
+
+**Why a shared, verified reference.** The Node client was built and tested
+first, then used as the exact template for the others — one reference,
+mirrored, so five clients can't quietly diverge in how they authenticate, name
+topics, or encode entries.
+
+**How correctness is anchored.** Every client's unit tests do a protobuf
+round-trip through the shared `.proto` and assert field numbers/types — the
+same bytes the Go server parses. No server, Redis, or MinIO needed, so these
+run anywhere and fast (see [`TESTING.md`](TESTING.md) §3).
+
+**The boundary every client refuses to cross.** None can set `entry_id`,
+`ingest_time`, or `audit` — those are server-owned, and each client's builder
+is structurally incapable of populating them (tested). This is
+*trust-is-earned-per-entry* holding no matter which language calls in.
+
+**Limit, stated plainly.** These are reference integrations, not published
+SDKs — complete and correct against the contract, but versioning/packaging
+for distribution is left to the consuming team.

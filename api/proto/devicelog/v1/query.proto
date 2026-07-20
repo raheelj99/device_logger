@@ -7,10 +7,11 @@ import "google/protobuf/timestamp.proto";
 
 option go_package = "devlog/api/gen/devicelog/v1;devicelogv1";
 
-// LogService is the observation plane: historical queries, live tailing,
-// audit verification, and compliance report export. All RPCs require TLS and
-// a valid license presented as `authorization: Bearer <token>` metadata.
-service LogService {
+// LogService is the observation plane: 
+// Historical queries, live tailing, audit verification, and compliance report export. 
+// All RPCs require TLS and a valid license presented as `authorization: Bearer <token>` metadata.
+service LogService 
+{
   rpc Query(QueryRequest) returns (stream LogEntry);
   rpc Tail(TailRequest) returns (stream LogEntry);
   rpc VerifyRange(VerifyRangeRequest) returns (VerifyRangeResponse);
@@ -18,7 +19,8 @@ service LogService {
   rpc GetStats(GetStatsRequest) returns (GetStatsResponse);
 }
 
-message QueryRequest {
+message QueryRequest 
+{
   repeated string device_ids = 1;               // empty = all devices
   google.protobuf.Timestamp from = 2;           // zero = server default lookback
   google.protobuf.Timestamp to = 3;             // zero = now
@@ -28,30 +30,35 @@ message QueryRequest {
   uint32 limit = 7;                             // 0 = server default; capped by server max
 }
 
-message TailRequest {
+message TailRequest 
+{
   repeated string device_ids = 1;
   Severity min_severity = 2;
   string trace_id = 3;
 }
 
-message VerifyRangeRequest {
+message VerifyRangeRequest 
+{
   string device_id = 1;
   google.protobuf.Timestamp from = 2;
   google.protobuf.Timestamp to = 3;
 }
 
-message ChainBreak {
+message ChainBreak 
+{
   string entry_id = 1;
   string reason = 2;
 }
 
-message VerifyRangeResponse {
+message VerifyRangeResponse 
+{
   uint64 entries_checked = 1;
   bool ok = 2;
   repeated ChainBreak breaks = 3;
 }
 
-message ExportAuditReportRequest {
+message ExportAuditReportRequest 
+{
   string trace_id = 1;                          // the sanitization job id
   google.protobuf.Timestamp from = 2;
   google.protobuf.Timestamp to = 3;
@@ -60,7 +67,8 @@ message ExportAuditReportRequest {
 // AuditReport is the raw material for a Certificate of Sanitization: every
 // entry of a job plus a verification verdict, hashed and signed by the
 // service so the exported bundle is itself tamper-evident.
-message AuditReport {
+message AuditReport 
+{
   string trace_id = 1;
   repeated LogEntry entries = 2;
   uint64 signatures_verified = 3;
@@ -73,12 +81,14 @@ message AuditReport {
 
 message GetStatsRequest {}
 
-message DeviceStats {
+message DeviceStats 
+{
   string device_id = 1;
   uint64 hot_entries = 2;
   google.protobuf.Timestamp last_ingest = 3;
 }
 
-message GetStatsResponse {
+message GetStatsResponse 
+{
   repeated DeviceStats devices = 1;
 }

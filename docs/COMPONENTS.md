@@ -460,19 +460,9 @@ interceptor chain.
 
 ---
 
-## 15. Failure behaviour at a glance
+## 15. Failure behaviour
 
-| Component | Failure | Behaviour |
-| --- | --- | --- |
-| `config` | bad/missing value | startup aborts with a precise message |
-| `broker` | bad credentials | CONNECT refused; healthy sessions unaffected |
-| `ingest` | identity mismatch / bad payload | that publish rejected + logged; session lives |
-| `hot` (Redis) | down | ingest errors → producer retries (QoS 1); queries serve cold tier |
-| `archive` / `cold` (bucket) | down | batch retained + retried; hot tier absorbs; no loss until hot retention exceeded |
-| `license` online | server unreachable | previously-activated sessions continue under `grace`; new denied |
-| `cold` read | segment tampered/corrupt | checksum mismatch fails the read loudly |
-| `query` | chain broken | `VerifyRange` pinpoints the exact entry and reason |
-| `ingest.Hub` | slow tail consumer | entries dropped for that stream only; history intact |
-
-See [`DESIGN.md`](DESIGN.md) §5 for the full failure-mode analysis and the
-data-at-risk column.
+Every component fails independently and loudly rather than silently — see
+[`DESIGN.md`](DESIGN.md) §5 for the full failure-mode table (trigger,
+behaviour, and data at risk) covering `config`, `broker`, `ingest`,
+`hot`/`cold` storage, `archive`, `license`, and `query`.

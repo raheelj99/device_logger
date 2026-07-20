@@ -41,12 +41,12 @@ Grafana: <http://localhost:3000> (admin/admin) → **Device Logger** dashboard.
 | Document | Contents |
 | --- | --- |
 | [docs/MANUAL.md](docs/MANUAL.md) | setup, configuration reference, licensing, C++ integration contract, operations runbook |
-| [docs/DESIGN.md](docs/DESIGN.md) | architecture, pattern inventory, security model, NIST/IEEE compliance mapping, failure modes |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | code formatting/style conventions and how to extend the codebase (new component, new client, proto changes, new docs) |
+| [docs/DESIGN.md](docs/DESIGN.md) | guiding principles, architecture, pattern inventory, security model, NIST/IEEE compliance mapping, failure modes, deployment & multi-language client rationale |
 | [docs/COMPONENTS.md](docs/COMPONENTS.md) | technical reference for every component — responsibility, concepts, public surface, interactions, failure behaviour |
 | [docs/components/](docs/components/README.md) | zero-to-hero Go deep-dive per component — an ordered learning path teaching the language through the real code |
 | [docs/TESTING.md](docs/TESTING.md) | the verification mechanism — Go unit tests, the multi-language client harness, the C++ supervisor test, Postman/grpcurl integration |
-| [docs/GO_CONCEPTS.md](docs/GO_CONCEPTS.md) | every Go concept used here, explained for a C++ engineer, anchored to real files |
-| [docs/ELITE_ENGINEERING.md](docs/ELITE_ENGINEERING.md) | the what/why/how mentality behind the design, deployment, clients, and tests |
+| [docs/GO_CONCEPTS.md](docs/GO_CONCEPTS.md) | one-line-per-concept Go index, linking into `docs/components/` for the full treatment |
 | [clients/README.md](clients/README.md) | Node, NestJS, and Python (Django/Flask/FastAPI) reference clients — both planes |
 | [deploy/embed/README.md](deploy/embed/README.md) | embedding devlogd in a C++ app (spawn supervisor) + `.deb` packaging |
 | [postman/README.md](postman/README.md) | Postman gRPC collection + grpcurl CI runner |

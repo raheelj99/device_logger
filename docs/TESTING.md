@@ -5,7 +5,7 @@ harness, the C++ supervisor test, and the Postman/grpcurl integration path —
 what each one covers, the concepts and tools behind it, and how to run it.
 
 Companion to [`COMPONENTS.md`](COMPONENTS.md) (what is being tested) and
-[`ELITE_ENGINEERING.md`](ELITE_ENGINEERING.md) (why it's tested this way).
+[`DESIGN.md`](DESIGN.md) (why it's tested this way).
 
 ---
 
