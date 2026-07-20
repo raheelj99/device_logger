@@ -1,0 +1,24 @@
+{
+  "name": "devlog-node-client",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Reference Node.js client for devlogd: MQTT/TLS ingest + gRPC/TLS observation",
+  "type": "commonjs",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "publish": "node src/index.js publish",
+    "query": "node src/index.js query",
+    "verify": "node src/index.js verify",
+    "export": "node src/index.js export",
+    "stats": "node src/index.js stats",
+    "e2e": "node src/index.js e2e",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "^1.10.0",
+    "@grpc/proto-loader": "^0.7.0",
+    "mqtt": "^5.5.0",
+    "protobufjs": "^7.2.0"
+  }
+}

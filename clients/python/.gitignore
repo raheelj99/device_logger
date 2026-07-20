@@ -1,0 +1,9 @@
+# Local virtualenv and Python build/test artifacts — never commit.
+# NOTE: devlog_client/gen/ is generated but intentionally committed.
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+build/
+dist/

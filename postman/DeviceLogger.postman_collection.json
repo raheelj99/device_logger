@@ -1,0 +1,424 @@
+{
+  "info": {
+    "_postman_id": "9a1e2c34-5f6b-47d8-9c10-b2d3e4f5a601",
+    "name": "DeviceLogger gRPC (devicelog.v1.LogService)",
+    "description": "Integration-testing collection for the devlogd observation plane.\n\nService: devicelog.v1.LogService (gRPC over TLS at localhost:9443).\nProto contract: api/proto/devicelog/v1/query.proto (imports api/proto/devicelog/v1/log.proto).\nImport path for the proto compiler: api/proto\n\nAuth: every RPC requires metadata `authorization: Bearer <token>` where <token>\nis the single-line contents of operator.lic in the repo root (a `query`-feature license).\n\nTLS: the server presents a certificate whose SAN includes `localhost`. Postman must be\nconfigured to trust the deployment CA at deploy/certs/ca.crt (Settings -> Certificates ->\nCA Certificates). Collections cannot embed CA files, so this is a one-time manual step.\nSee postman/README.md for full setup, and postman/run-integration.sh for the grpcurl-based\nCI alternative (Newman does NOT support gRPC).\n\nRequests included (all five LogService methods):\n  - Query               (server-streaming)\n  - Tail                (server-streaming, unbounded)\n  - VerifyRange         (unary)\n  - ExportAuditReport   (unary)\n  - GetStats            (unary)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "GetStats (unary)",
+      "protocolProfileBehavior": {
+        "grpc": {
+          "service": "devicelog.v1.LogService",
+          "method": "GetStats",
+          "streaming": "unary",
+          "tls": true
+        }
+      },
+      "request": {
+        "method": "GRPC",
+        "description": "GetStats(GetStatsRequest) returns (GetStatsResponse). Returns per-device hot-tier counts and last ingest time. Request message is empty ({}).",
+        "url": {
+          "raw": "{{grpcUrl}}",
+          "host": ["{{grpcUrl}}"]
+        },
+        "header": [],
+        "metadata": [
+          {
+            "key": "authorization",
+            "value": "Bearer {{licenseToken}}",
+            "type": "text",
+            "description": "query-feature license token (single line from operator.lic)"
+          }
+        ],
+        "config": {
+          "protoFile": "api/proto/devicelog/v1/query.proto",
+          "protoImportPaths": ["api/proto"],
+          "service": "devicelog.v1.LogService",
+          "method": "GetStats",
+          "tls": {
+            "enabled": true,
+            "caCertRef": "deploy/certs/ca.crt",
+            "serverName": "localhost"
+          }
+        },
+        "body": {
+          "mode": "grpc",
+          "grpc": {
+            "message": "{}"
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// GetStats: unary RPC, must complete without a gRPC error.",
+              "pm.test('GetStats returns OK (status code 0)', function () {",
+              "    pm.expect(pm.response.statusCode.code).to.eql(0);",
+              "});",
+              "",
+              "pm.test('GetStatsResponse has a devices field', function () {",
+              "    var msg = (pm.response.messages && pm.response.messages[0]) || pm.response.data || {};",
+              "    pm.expect(msg).to.have.property('devices');",
+              "    pm.expect(msg.devices).to.be.an('array');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Query (server-streaming)",
+      "protocolProfileBehavior": {
+        "grpc": {
+          "service": "devicelog.v1.LogService",
+          "method": "Query",
+          "streaming": "server",
+          "tls": true
+        }
+      },
+      "request": {
+        "method": "GRPC",
+        "description": "Query(QueryRequest) returns (stream LogEntry). Historical query merged across Redis + object store. Fields: device_ids, from, to, min_severity, subsystem, trace_id, limit. Example filters by trace_id and caps at limit=100.",
+        "url": {
+          "raw": "{{grpcUrl}}",
+          "host": ["{{grpcUrl}}"]
+        },
+        "header": [],
+        "metadata": [
+          {
+            "key": "authorization",
+            "value": "Bearer {{licenseToken}}",
+            "type": "text",
+            "description": "query-feature license token (single line from operator.lic)"
+          }
+        ],
+        "config": {
+          "protoFile": "api/proto/devicelog/v1/query.proto",
+          "protoImportPaths": ["api/proto"],
+          "service": "devicelog.v1.LogService",
+          "method": "Query",
+          "tls": {
+            "enabled": true,
+            "caCertRef": "deploy/certs/ca.crt",
+            "serverName": "localhost"
+          }
+        },
+        "body": {
+          "mode": "grpc",
+          "grpc": {
+            "message": "{\n  \"device_ids\": [\"{{deviceId}}\"],\n  \"trace_id\": \"{{traceId}}\",\n  \"limit\": 100\n}"
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Query: server-streaming. Stream must terminate cleanly.",
+              "pm.test('Query stream ends OK (status code 0)', function () {",
+              "    pm.expect(pm.response.statusCode.code).to.eql(0);",
+              "});",
+              "",
+              "pm.test('Streamed messages are LogEntry-shaped (when any returned)', function () {",
+              "    var msgs = pm.response.messages || [];",
+              "    // A newly-seeded devlogd may legitimately return zero rows for a filter.",
+              "    if (msgs.length === 0) {",
+              "        pm.expect.fail === undefined; // no-op: empty result is acceptable",
+              "        return;",
+              "    }",
+              "    var first = msgs[0].data || msgs[0];",
+              "    pm.expect(first).to.have.property('entry_id');",
+              "    pm.expect(first).to.have.property('device_id');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Tail (server-streaming, unbounded)",
+      "protocolProfileBehavior": {
+        "grpc": {
+          "service": "devicelog.v1.LogService",
+          "method": "Tail",
+          "streaming": "server",
+          "tls": true
+        }
+      },
+      "request": {
+        "method": "GRPC",
+        "description": "Tail(TailRequest) returns (stream LogEntry). Live follow of new entries; the stream is UNBOUNDED - it never ends on its own, so cancel it manually in the Postman UI. Fields: device_ids, min_severity, trace_id.",
+        "url": {
+          "raw": "{{grpcUrl}}",
+          "host": ["{{grpcUrl}}"]
+        },
+        "header": [],
+        "metadata": [
+          {
+            "key": "authorization",
+            "value": "Bearer {{licenseToken}}",
+            "type": "text",
+            "description": "query-feature license token (single line from operator.lic)"
+          }
+        ],
+        "config": {
+          "protoFile": "api/proto/devicelog/v1/query.proto",
+          "protoImportPaths": ["api/proto"],
+          "service": "devicelog.v1.LogService",
+          "method": "Tail",
+          "tls": {
+            "enabled": true,
+            "caCertRef": "deploy/certs/ca.crt",
+            "serverName": "localhost"
+          }
+        },
+        "body": {
+          "mode": "grpc",
+          "grpc": {
+            "message": "{\n  \"device_ids\": [\"{{deviceId}}\"]\n}"
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Tail is unbounded and driven manually from the UI. When you cancel the",
+              "// stream, gRPC reports CANCELLED (code 1); a clean end is code 0.",
+              "pm.test('Tail connected without an auth/transport error', function () {",
+              "    var code = pm.response && pm.response.statusCode ? pm.response.statusCode.code : 0;",
+              "    pm.expect([0, 1]).to.include(code);",
+              "});",
+              "",
+              "pm.test('Any streamed message is LogEntry-shaped', function () {",
+              "    var msgs = pm.response.messages || [];",
+              "    if (msgs.length === 0) { return; }",
+              "    var first = msgs[0].data || msgs[0];",
+              "    pm.expect(first).to.have.property('entry_id');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "VerifyRange (unary)",
+      "protocolProfileBehavior": {
+        "grpc": {
+          "service": "devicelog.v1.LogService",
+          "method": "VerifyRange",
+          "streaming": "unary",
+          "tls": true
+        }
+      },
+      "request": {
+        "method": "GRPC",
+        "description": "VerifyRange(VerifyRangeRequest) returns (VerifyRangeResponse). Re-checks every signature and hash-chain link for a device across a time range. Fields: device_id, from, to. Response: entries_checked, ok, breaks[].",
+        "url": {
+          "raw": "{{grpcUrl}}",
+          "host": ["{{grpcUrl}}"]
+        },
+        "header": [],
+        "metadata": [
+          {
+            "key": "authorization",
+            "value": "Bearer {{licenseToken}}",
+            "type": "text",
+            "description": "query-feature license token (single line from operator.lic)"
+          }
+        ],
+        "config": {
+          "protoFile": "api/proto/devicelog/v1/query.proto",
+          "protoImportPaths": ["api/proto"],
+          "service": "devicelog.v1.LogService",
+          "method": "VerifyRange",
+          "tls": {
+            "enabled": true,
+            "caCertRef": "deploy/certs/ca.crt",
+            "serverName": "localhost"
+          }
+        },
+        "body": {
+          "mode": "grpc",
+          "grpc": {
+            "message": "{\n  \"device_id\": \"{{deviceId}}\"\n}"
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// VerifyRange: unary. Must complete and report the verdict fields.",
+              "pm.test('VerifyRange returns OK (status code 0)', function () {",
+              "    pm.expect(pm.response.statusCode.code).to.eql(0);",
+              "});",
+              "",
+              "pm.test('VerifyRangeResponse has ok + entries_checked', function () {",
+              "    var msg = (pm.response.messages && pm.response.messages[0]) || pm.response.data || {};",
+              "    pm.expect(msg).to.have.property('ok');",
+              "    pm.expect(msg).to.have.property('entries_checked');",
+              "});",
+              "",
+              "pm.test('Chain is intact (ok === true)', function () {",
+              "    var msg = (pm.response.messages && pm.response.messages[0]) || pm.response.data || {};",
+              "    // If this fails, msg.breaks lists the exact entries where the chain broke.",
+              "    pm.expect(msg.ok).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "ExportAuditReport (unary)",
+      "protocolProfileBehavior": {
+        "grpc": {
+          "service": "devicelog.v1.LogService",
+          "method": "ExportAuditReport",
+          "streaming": "unary",
+          "tls": true
+        }
+      },
+      "request": {
+        "method": "GRPC",
+        "description": "ExportAuditReport(ExportAuditReportRequest) returns (AuditReport). Signed, tamper-evident report for one sanitization job (trace_id). Fields: trace_id, from, to. Response: entries[], signatures_verified, all_signatures_valid, report_hash, report_signature, key_id.",
+        "url": {
+          "raw": "{{grpcUrl}}",
+          "host": ["{{grpcUrl}}"]
+        },
+        "header": [],
+        "metadata": [
+          {
+            "key": "authorization",
+            "value": "Bearer {{licenseToken}}",
+            "type": "text",
+            "description": "query-feature license token (single line from operator.lic)"
+          }
+        ],
+        "config": {
+          "protoFile": "api/proto/devicelog/v1/query.proto",
+          "protoImportPaths": ["api/proto"],
+          "service": "devicelog.v1.LogService",
+          "method": "ExportAuditReport",
+          "tls": {
+            "enabled": true,
+            "caCertRef": "deploy/certs/ca.crt",
+            "serverName": "localhost"
+          }
+        },
+        "body": {
+          "mode": "grpc",
+          "grpc": {
+            "message": "{\n  \"trace_id\": \"{{traceId}}\"\n}"
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// ExportAuditReport: unary. Must return the signed report envelope.",
+              "pm.test('ExportAuditReport returns OK (status code 0)', function () {",
+              "    pm.expect(pm.response.statusCode.code).to.eql(0);",
+              "});",
+              "",
+              "pm.test('AuditReport carries trace_id + signature verdict + hash', function () {",
+              "    var msg = (pm.response.messages && pm.response.messages[0]) || pm.response.data || {};",
+              "    pm.expect(msg).to.have.property('trace_id');",
+              "    pm.expect(msg).to.have.property('all_signatures_valid');",
+              "    pm.expect(msg).to.have.property('report_hash');",
+              "});",
+              "",
+              "pm.test('All embedded signatures are valid', function () {",
+              "    var msg = (pm.response.messages && pm.response.messages[0]) || pm.response.data || {};",
+              "    pm.expect(msg.all_signatures_valid).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// ---------------------------------------------------------------------------",
+          "// devlogd gRPC observation plane - collection pre-request notes",
+          "// ---------------------------------------------------------------------------",
+          "// TLS: every request in this collection dials {{grpcUrl}} over TLS. The server",
+          "// certificate's SAN includes `localhost`, so keep grpcUrl host = localhost (or",
+          "// set the TLS server name override to `localhost` in the request's TLS settings).",
+          "//",
+          "// A Postman collection CANNOT embed a CA certificate file. You MUST configure it",
+          "// once in the Postman app:",
+          "//   Settings -> Certificates -> CA Certificates -> select deploy/certs/ca.crt",
+          "// (If the deployment uses mutual TLS, also add the client cert/key under",
+          "//  Settings -> Certificates -> Client Certificates for host localhost:9443,",
+          "//  using deploy/certs/client.crt and deploy/certs/client.key.)",
+          "//",
+          "// AUTH: each request sends metadata `authorization: Bearer {{licenseToken}}`.",
+          "// Paste the single-line contents of operator.lic (repo root) into the",
+          "// environment variable `licenseToken` before running. It is a query-feature",
+          "// license; without it every RPC fails with UNAUTHENTICATED.",
+          "if (!pm.environment.get('licenseToken') && !pm.collectionVariables.get('licenseToken')) {",
+          "    console.warn('licenseToken is empty - set it from operator.lic or every RPC will fail UNAUTHENTICATED.');",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "grpcUrl",
+      "value": "localhost:9443",
+      "type": "string"
+    },
+    {
+      "key": "deviceId",
+      "value": "station-01",
+      "type": "string"
+    },
+    {
+      "key": "traceId",
+      "value": "job-REPLACE-ME",
+      "type": "string"
+    },
+    {
+      "key": "licenseToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "protoFile",
+      "value": "api/proto/devicelog/v1/query.proto",
+      "type": "string"
+    },
+    {
+      "key": "protoImportPath",
+      "value": "api/proto",
+      "type": "string"
+    }
+  ]
+}

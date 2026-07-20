@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "devlog-client"
+version = "0.1.0"
+description = "Python client for the devlogd device-logging service (MQTT ingest + gRPC observe)"
+requires-python = ">=3.9"
+dependencies = [
+    "grpcio>=1.60",
+    "grpcio-tools>=1.60",
+    "protobuf>=4.25",
+    "paho-mqtt>=2.0",
+]
+
+[project.optional-dependencies]
+# Thin REST wrappers over the shared client — one per framework.
+django = ["django>=4.2"]
+flask = ["flask>=3.0"]
+fastapi = ["fastapi>=0.110", "uvicorn[standard]>=0.29"]
+test = ["pytest>=8.0", "httpx>=0.27"]
+
+[project.scripts]
+devlog = "devlog_client.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["devlog_client*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "integration: end-to-end test requiring a live devlogd + Redis + MinIO (skipped by default)",
+]
