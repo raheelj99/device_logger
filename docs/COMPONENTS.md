@@ -122,6 +122,15 @@ inject them, and run all long-lived goroutines under one supervisor.
 - **Readiness flag** — an `atomic.Bool` flips to true only after every component
   is constructed; `/readyz` reports it (this is exactly what the C++ supervisor
   and Kubernetes-style probes gate on).
+- **Optional self-hosted backing services** — before connecting to Redis/MinIO,
+  `main.go` calls `bootstrap.EnsureRedis`/`EnsureMinio` (`internal/bootstrap`).
+  If the configured address is already reachable, or `auto_start` is disabled
+  (the default), these are no-ops and the existing fail-fast connect below is
+  unchanged. Otherwise they spawn the real binary against a persistent data
+  directory, wait for it to become ready, and return a handle the composition
+  root defers `.Stop()` on — so a station appliance can be self-contained
+  without a separately orchestrated Redis/MinIO, while still getting full
+  AOF/disk durability (see [`DESIGN.md`](DESIGN.md) §9).
 
 ---
 
@@ -379,7 +388,10 @@ crash-safely, in the background.
 - **Clean shutdown.** On `ctx` cancellation, `finalFlush` runs with a *fresh*
   context (with timeout) so the drain isn't aborted by the very cancellation
   that triggered it — this is what the C++ supervisor's graceful `stop()` relies
-  on.
+  on. `finalFlush` first calls `drainAll`, which keeps reading (non-blocking)
+  until the hot tier has nothing left pending, flushing whenever a batch limit
+  is hit — a graceful stop backs up the *entire* backlog to cold storage, not
+  just whatever the main loop had already buffered.
 
 ---
 

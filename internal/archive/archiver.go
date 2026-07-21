@@ -134,11 +134,60 @@ func (a *Archiver) flush(ctx context.Context) {
 }
 
 // finalFlush runs during shutdown with a fresh context so draining is not
-// aborted by the cancellation that triggered it.
+// aborted by the cancellation that triggered it. It backs up every entry
+// still sitting in the hot tier to cold storage, not just whatever was
+// already buffered in memory — devlogd should never rely on the next
+// startup's reclaim() to carry a clean shutdown's backlog to cold storage.
 func (a *Archiver) finalFlush() {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
+	a.drainAll(ctx)
 	a.flush(ctx)
+}
+
+// drainAll pulls every currently pending entry from every device's stream
+// into the batch — non-blocking, so it stops as soon as the hot tier has
+// nothing left to offer rather than waiting for more to arrive — flushing
+// whenever a batch limit is hit so a large backlog can't balloon memory even
+// during shutdown.
+func (a *Archiver) drainAll(ctx context.Context) {
+	devices, err := a.hot.Devices(ctx)
+	if err != nil {
+		a.log.Error("final drain: list devices failed", "err", err)
+		return
+	}
+	if len(devices) == 0 {
+		return
+	}
+	for _, d := range devices {
+		if err := a.hot.EnsureGroup(ctx, d); err != nil {
+			a.log.Error("final drain: ensure group failed", "device", d, "err", err)
+			return
+		}
+	}
+	for ctx.Err() == nil {
+		// Block < 0 omits Redis's BLOCK option entirely, so this returns
+		// immediately with whatever is currently pending instead of
+		// waiting for new entries — Block: 0 would mean "wait forever".
+		msgs, err := a.hot.ReadGroup(ctx, devices, a.consumer, int64(a.maxCount), -1)
+		if err != nil {
+			a.log.Error("final drain: read failed", "err", err)
+			return
+		}
+		if len(msgs) == 0 {
+			return
+		}
+		for device, raws := range msgs {
+			for _, raw := range raws {
+				a.batch = append(a.batch, raw.Entry)
+				a.batchBytes += proto.Size(raw.Entry)
+				a.acks[device] = append(a.acks[device], raw.ID)
+			}
+		}
+		if len(a.batch) >= a.maxCount || a.batchBytes >= a.maxBytes {
+			a.flush(ctx)
+		}
+	}
 }
 
 // reclaim adopts entries a previous (crashed) run read but never acked.

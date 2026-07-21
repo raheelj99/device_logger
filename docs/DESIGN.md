@@ -217,3 +217,33 @@ is structurally incapable of populating them (tested). This is
 **Limit, stated plainly.** These are reference integrations, not published
 SDKs — complete and correct against the contract, but versioning/packaging
 for distribution is left to the consuming team.
+
+## 9. Self-hosted backing services (opt-in) — `internal/bootstrap`
+
+**What.** `redis.auto_start`/`s3.auto_start` (both disabled by default) let
+devlogd spawn its own `redis-server`/`minio` at startup when the configured
+address isn't reachable yet, instead of only ever failing fast. See
+[`MANUAL.md`](MANUAL.md) §2a for operator-facing setup.
+
+**Why opt-in, not automatic.** Changing devlogd's default startup behavior
+would be a silent regression for anyone already pointing it at an externally
+managed, possibly shared Redis/MinIO — *fail fast* stays the default. An
+operator turns this on explicitly for a single-station appliance that isn't
+handed an already-running instance.
+
+**Why spawn the real binaries, not an embedded fallback.** The alternative —
+an in-process Redis stand-in for the hot tier — would be in-memory only and
+would not survive a crash, quietly weakening the durability guarantee this
+whole design is built around (§2's WAL-style buffering, the hash chain's
+tamper-*evidence*). Spawning the real `redis-server` (with `--appendonly yes`)
+and `minio` against persistent data directories keeps every guarantee above
+unchanged; it also matches the project's own deployment story — the `.deb`
+packaging in [`deploy/embed/README.md`](../deploy/embed/README.md) already
+lists `redis-server` and `minio` as dependencies installed alongside devlogd
+on the appliance.
+
+**Scope, stated plainly.** This is a startup-time convenience, not a runtime
+supervisor: if Redis or MinIO die once devlogd is already running, devlogd
+does not try to respawn them — §5's failure modes still apply unchanged.
+devlogd only stops a process it itself spawned; an externally managed
+instance it merely connected to is never signaled.

@@ -18,6 +18,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"devlog/internal/archive"
+	"devlog/internal/bootstrap"
 	"devlog/internal/broker"
 	"devlog/internal/cold"
 	"devlog/internal/config"
@@ -40,23 +41,29 @@ func main() {
 }
 
 func run(cfgPath string) error {
+	// Context with signal handling: cancel on SIGINT/SIGTERM.
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	// Config
 	cfg, err := config.Load(cfgPath)
 	if err != nil {
 		return err
 	}
+
+	// Telemetry
 	log := telemetry.NewLogger(cfg.Log.Level)
 	metrics := telemetry.NewMetrics()
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-
-	// Crypto and licensing.
+	// Crypto
 	signer, err := sign.LoadSigner(cfg.Signing.KeyFile, cfg.Signing.KeyID)
 	if err != nil {
 		return err
 	}
 	verifier := sign.NewVerifier()
 	verifier.Add(cfg.Signing.KeyID, signer.Public())
+
+	// Licensing
 	issuerPub, err := sign.LoadPublicPEM(cfg.License.IssuerPubFile)
 	if err != nil {
 		return fmt.Errorf("load license issuer key: %w", err)
@@ -70,13 +77,30 @@ func run(cfgPath string) error {
 	}
 	sessions := license.NewManager(license.NewVerifier(issuerPub), online, metrics, log)
 
-	// Storage tiers.
+	// Storage tiers. If auto_start is enabled and nothing answers at the
+	// configured address yet, spawn a local instance and wait for it to
+	// become ready before the connect-and-verify step below (unchanged from
+	// before); otherwise EnsureRedis/EnsureMinio are no-ops and that step
+	// produces the same fail-fast error it always has.
+	redisSvc, err := bootstrap.EnsureRedis(ctx, cfg.Redis.Addr, cfg.Redis.Password, cfg.Redis.AutoStart, log)
+	if err != nil {
+		return err
+	}
+	defer redisSvc.Stop()
+
 	rdb := redis.NewClient(&redis.Options{Addr: cfg.Redis.Addr, Password: cfg.Redis.Password})
 	defer rdb.Close()
 	if err := rdb.Ping(ctx).Err(); err != nil {
 		return fmt.Errorf("redis unreachable at %s: %w", cfg.Redis.Addr, err)
 	}
 	hotStore := hot.New(rdb, cfg.Redis.HotRetention.Std())
+
+	minioSvc, err := bootstrap.EnsureMinio(ctx, cfg.S3.Endpoint, cfg.S3.AccessKey, cfg.S3.SecretKey, cfg.S3.AutoStart, log)
+	if err != nil {
+		return err
+	}
+	defer minioSvc.Stop()
+
 	objectStore, err := cold.NewMinio(ctx, cfg.S3.Endpoint, cfg.S3.AccessKey, cfg.S3.SecretKey,
 		cfg.S3.UseTLS, cfg.S3.Bucket)
 	if err != nil {

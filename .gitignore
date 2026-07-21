@@ -3,6 +3,9 @@ deploy/certs/
 deploy/keys/
 *.lic
 
+# Data directories for auto-started Redis/MinIO (redis.auto_start, s3.auto_start)
+/data/
+
 # Build artifacts
 /bin/
 /dist/

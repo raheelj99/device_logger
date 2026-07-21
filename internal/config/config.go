@@ -32,6 +32,19 @@ type TLS struct {
 	ClientCAFile string `yaml:"client_ca_file"`
 }
 
+// AutoStart controls whether devlogd spawns its own local Redis or MinIO
+// process at startup when nothing answers at the configured address yet.
+// Disabled by default: an operator opts in for a single-station/appliance
+// deployment that isn't handed an already-running Redis/MinIO. It only ever
+// acts once, at startup — devlogd does not supervise or respawn either
+// process if it dies later while the service is running.
+type AutoStart struct {
+	Enabled bool     `yaml:"enabled"`
+	BinPath string   `yaml:"bin_path"`
+	DataDir string   `yaml:"data_dir"`
+	Timeout Duration `yaml:"timeout"`
+}
+
 type Config struct {
 	MQTT struct {
 		Listen string `yaml:"listen"`
@@ -45,16 +58,18 @@ type Config struct {
 		Listen string `yaml:"listen"`
 	} `yaml:"http"`
 	Redis struct {
-		Addr         string   `yaml:"addr"`
-		Password     string   `yaml:"password"`
-		HotRetention Duration `yaml:"hot_retention"`
+		Addr         string    `yaml:"addr"`
+		Password     string    `yaml:"password"`
+		HotRetention Duration  `yaml:"hot_retention"`
+		AutoStart    AutoStart `yaml:"auto_start"`
 	} `yaml:"redis"`
 	S3 struct {
-		Endpoint  string `yaml:"endpoint"`
-		AccessKey string `yaml:"access_key"`
-		SecretKey string `yaml:"secret_key"`
-		Bucket    string `yaml:"bucket"`
-		UseTLS    bool   `yaml:"use_tls"`
+		Endpoint  string    `yaml:"endpoint"`
+		AccessKey string    `yaml:"access_key"`
+		SecretKey string    `yaml:"secret_key"`
+		Bucket    string    `yaml:"bucket"`
+		UseTLS    bool      `yaml:"use_tls"`
+		AutoStart AutoStart `yaml:"auto_start"`
 	} `yaml:"s3"`
 	Signing struct {
 		KeyFile string `yaml:"key_file"`
@@ -88,7 +103,9 @@ func defaults() *Config {
 	c.HTTP.Listen = ":9090"
 	c.Redis.Addr = "localhost:6379"
 	c.Redis.HotRetention = Duration(24 * time.Hour)
+	c.Redis.AutoStart = AutoStart{BinPath: "redis-server", DataDir: "data/redis", Timeout: Duration(15 * time.Second)}
 	c.S3.Bucket = "devlog"
+	c.S3.AutoStart = AutoStart{BinPath: "minio", DataDir: "data/minio", Timeout: Duration(15 * time.Second)}
 	c.Signing.KeyID = "devlogd-1"
 	c.License.Mode = "offline"
 	c.License.Grace = Duration(72 * time.Hour)

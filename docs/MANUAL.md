@@ -54,6 +54,28 @@ Secrets hygiene: `deploy/certs/`, `deploy/keys/`, and `*.lic` are gitignored.
 production keep it off the deployment machine entirely (issue licenses
 elsewhere; devlogd only needs `issuer.pub`).
 
+### 2a. Self-hosting Redis/MinIO (single-station deployments)
+
+Step 5 above (backing services) assumes Docker. On a station appliance
+without a separately managed Redis/MinIO, set `redis.auto_start.enabled: true`
+and/or `s3.auto_start.enabled: true` in `config/devlogd.yaml` (both are `false`
+by default — the pre-existing fail-fast behavior for anyone already pointing
+at externally managed instances is unchanged unless you opt in). With it on,
+devlogd spawns `redis-server`/`minio` itself at startup — bound to `redis.addr`
+/ `s3.endpoint`, data persisted under `redis.auto_start.data_dir` /
+`s3.auto_start.data_dir` (default `data/redis`, `data/minio`, gitignored) —
+waits for it to become ready (`auto_start.timeout`, default 15s), and stops it
+gracefully on shutdown. This requires the `redis-server`/`minio` binaries to be
+installed on the host (see the `.deb` dependency list in
+[`deploy/embed/README.md`](../deploy/embed/README.md), which already assumes
+both are co-located with devlogd on the appliance).
+
+This is a **startup-time convenience, not a runtime supervisor**: if Redis or
+MinIO die while devlogd is already running, devlogd does not try to respawn
+them — the existing failure-mode behavior in [`DESIGN.md`](DESIGN.md) §5 still
+applies. If devlogd only *connected* to an already-running instance (auto-start
+never spawned anything), it never signals that instance on shutdown.
+
 ## 3. Running
 
 ```powershell
@@ -92,7 +114,9 @@ go run ./cmd/logctl tail -license operator.lic          # in a second terminal
 | `http.listen` | `:9090` | metrics + health |
 | `redis.addr` / `password` | `localhost:6379` | hot tier |
 | `redis.hot_retention` | `24h` | window kept in Redis; older entries live only in the bucket |
+| `redis.auto_start.*` | disabled | spawn a local `redis-server` at startup if `addr` is unreachable — §2a |
 | `s3.endpoint`, `access_key`, `secret_key`, `bucket`, `use_tls` | MinIO defaults | cold tier |
+| `s3.auto_start.*` | disabled | spawn a local `minio` at startup if `endpoint` is unreachable — §2a |
 | `signing.key_file` | — | Ed25519 key that signs every entry |
 | `signing.key_id` | `devlogd-2026` | key name recorded per entry (rotation, §8) |
 | `license.issuer_pub_file` | — | public key licenses must be signed by |
@@ -212,9 +236,14 @@ reconnect. Revocation in offline mode = short validity windows; in online
 mode the server is the enforcement point.
 
 **Backup.** The bucket is the system of record: back up MinIO's volume or
-replicate the bucket (`segments/` + `manifests/`). Redis AOF persistence is
-on in compose, but Redis loss costs at most the un-archived tail — at most
-`archive.flush_interval` of data, and only if the bucket flush also failed.
+replicate the bucket (`segments/` + `manifests/`). A graceful stop (SIGTERM,
+`systemctl stop`, Ctrl-C) drains the *entire* hot-tier backlog to cold storage
+before devlogd exits, not just whatever the archiver had already batched — so
+a planned restart never leaves anything un-archived. Only a hard crash (no
+chance to run shutdown, e.g. `kill -9`, power loss) risks losing the
+un-archived tail, bounded by `archive.flush_interval`, and even then only if
+the bucket flush also failed; Redis AOF persistence (on in compose) makes that
+tail recoverable via the consumer-group reclaim on the next startup regardless.
 
 **Crash recovery** is automatic: unarchived entries are re-claimed from the
 Redis consumer group on restart; duplicate archiving is absorbed by
